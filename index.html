@@ -1,57 +1,268 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Authix</title>
-    <style>
-        body {
-            background-color: #36393f;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-        }
-        .success { color: #57f287; }
-        .failed { color: #ed4245; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Authix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:       #0d0e11;
+      --surface:  #16181d;
+      --border:   #2a2d35;
+      --accent:   #7c6cff;
+      --green:    #3dffa0;
+      --red:      #ff4d6a;
+      --yellow:   #ffd166;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.35;
+      z-index: 0;
+    }
+
+    /* radial glow */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 50%,
+        rgba(124,108,255,0.12) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 52px;
+      width: 100%;
+      max-width: 480px;
+      margin: 20px;
+      box-shadow: 0 0 0 1px rgba(124,108,255,0.08),
+                  0 32px 64px rgba(0,0,0,0.5);
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform: scale(1); }
+      50%      { opacity:0.4; transform: scale(0.7); }
+    }
+
+    .icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+      animation: iconPop 0.6s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    @keyframes iconPop {
+      from { opacity:0; transform: scale(0.5); }
+      to   { opacity:1; transform: scale(1); }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    h1.success { color: var(--green); }
+    h1.failed  { color: var(--red); }
+    h1.loading { color: var(--text); }
+
+    p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 6px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    .status-row span:last-child {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-top: 18px;
+    }
+
+    .badge.ok  { background: rgba(61,255,160,0.1); color: var(--green); border: 1px solid rgba(61,255,160,0.2); }
+    .badge.err { background: rgba(255,77,106,0.1); color: var(--red);   border: 1px solid rgba(255,77,106,0.2); }
+
+    /* spinner */
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-bar-wrap {
+      height: 3px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      animation: fill 2s ease forwards;
+    }
+
+    @keyframes fill { from { width:0% } to { width:100% } }
+  </style>
 </head>
 <body>
-    <div id="result">
-        <h1>Authix</h1>
-        <p>Processing...</p>
-    </div>
+  <div class="card" id="card">
+    <!-- initial loading state -->
+    <div class="logo"><div class="logo-dot"></div>AUTHIX</div>
+    <div class="spinner"></div>
+    <h1 class="loading">Verifying...</h1>
+    <p>Checking your authorization code.</p>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+  </div>
 
-    <script>
-        // Get code from URL: ?code=xxxxx
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const error = urlParams.get('error');
-        
-        if (error) {
-            document.getElementById('result').innerHTML = `
-                <h1 class="failed">❌ Failed!</h1>
-                <p>Authorization was denied.</p>
-            `;
-        } else if (code) {
-            // Success! Show success message
-            document.getElementById('result').innerHTML = `
-                <h1 class="success">✅ Success!</h1>
-                <p>Your Discord account has been authorized.</p>
-                <p>You can close this tab.</p>
-            `;
-            
-            // OPTIONAL: Send code to your bot via webhook
-            // This is how tokens get saved to auths.txt
-            fetch('https://your-bot.onrihost.com/webhook/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code })
-            }).catch(err => console.log('Webhook failed:', err));
-        } else {
-            document.getElementById('result').innerHTML = `
-                <h1 class="failed">❌ Failed!</h1>
-                <p>No authorization code received.</p>
-            `;
-        }
-    </script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get('code');
+    const error  = params.get('error');
+    const card   = document.getElementById('card');
+
+    function render(icon, titleClass, title, lines, badgeClass, badgeText, extra = '') {
+      card.innerHTML = `
+        <div class="logo"><div class="logo-dot"></div>AUTHIX</div>
+        <span class="icon">${icon}</span>
+        <h1 class="${titleClass}">${title}</h1>
+        ${lines.map(l => `<p>${l}</p>`).join('')}
+        <span class="badge ${badgeClass}">${badgeText}</span>
+        ${extra}
+      `;
+    }
+
+    if (error) {
+      render('🚫', 'failed', 'Denied',
+        ['You cancelled or denied the authorization.', 'You can close this tab.'],
+        'err', '● Authorization denied');
+
+    } else if (code) {
+      // Calls the Netlify serverless function — client_secret never touches the browser
+      fetch('/callback?code=' + encodeURIComponent(code))
+        .then(async res => {
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            render('✅', 'success', 'Authorized!',
+              ['Your Discord account has been linked.', 'You can safely close this tab now.'],
+              'ok', '● Token saved',
+              `<div class="divider"></div>
+               <div class="status-row"><span>user</span><span>${data.username}</span></div>
+               <div class="status-row" style="margin-top:6px"><span>scope</span><span>identify · guilds.join</span></div>`
+            );
+          } else {
+            throw new Error(data.error || `Server returned ${res.status}`);
+          }
+        })
+        .catch(err => {
+          render('❌', 'failed', 'Auth Failed',
+            ['Something went wrong while processing your code.',
+             `<span style="color:#ff4d6a;font-size:11px">${err.message}</span>`],
+            'err', '● Server error');
+        });
+
+    } else {
+      render('⚠️', 'failed', 'No Code',
+        ['No authorization code was found in the URL.',
+         'Please use the link provided by the bot.'],
+        'err', '● Missing code');
+    }
+  </script>
 </body>
 </html>
