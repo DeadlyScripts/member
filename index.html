@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authix Callback</title>
+    <style>
+        body {
+            background-color: #36393f;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+        }
+        .success {
+            color: #57f287;
+        }
+        .failed {
+            color: #ed4245;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #2f3136;
+            border-radius: 10px;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="result">
+        <h1>Authix</h1>
+        <p>Processing...</p>
+    </div>
+
+    <script>
+        // Get the code from the URL (?code=xxxxx)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        
+        if (error) {
+            document.getElementById('result').innerHTML = `
+                <h1 class="failed">❌ Failed!</h1>
+                <p>Authorization was denied or failed.</p>
+                <p>Please try again.</p>
+            `;
+        } else if (!code) {
+            document.getElementById('result').innerHTML = `
+                <h1 class="failed">❌ Failed!</h1>
+                <p>No authorization code received.</p>
+                <p>Please try again.</p>
+            `;
+        } else {
+            // Success! Show success message
+            document.getElementById('result').innerHTML = `
+                <h1 class="success">✅ Success!</h1>
+                <p>Your Discord account has been authorized.</p>
+                <p>You can close this tab and return to Discord.</p>
+            `;
+            
+            // Optional: Send the code to a webhook
+            fetch('https://your-bot-webhook-url.com/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            }).catch(err => console.error('Webhook error:', err));
+        }
+    </script>
+</body>
+</html>
