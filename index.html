@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Authix Callback</title>
+    <title>Authix</title>
     <style>
         body {
             background-color: #36393f;
@@ -9,31 +9,19 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
-            margin: 0;
         }
-        .success {
-            color: #57f287;
-        }
-        .failed {
-            color: #ed4245;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background-color: #2f3136;
-            border-radius: 10px;
-            padding: 40px;
-        }
+        .success { color: #57f287; }
+        .failed { color: #ed4245; }
     </style>
 </head>
 <body>
-    <div class="container" id="result">
+    <div id="result">
         <h1>Authix</h1>
         <p>Processing...</p>
     </div>
 
     <script>
-        // Get the code from the URL (?code=xxxxx)
+        // Get code from URL: ?code=xxxxx
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
@@ -41,29 +29,28 @@
         if (error) {
             document.getElementById('result').innerHTML = `
                 <h1 class="failed">❌ Failed!</h1>
-                <p>Authorization was denied or failed.</p>
-                <p>Please try again.</p>
+                <p>Authorization was denied.</p>
             `;
-        } else if (!code) {
-            document.getElementById('result').innerHTML = `
-                <h1 class="failed">❌ Failed!</h1>
-                <p>No authorization code received.</p>
-                <p>Please try again.</p>
-            `;
-        } else {
+        } else if (code) {
             // Success! Show success message
             document.getElementById('result').innerHTML = `
                 <h1 class="success">✅ Success!</h1>
                 <p>Your Discord account has been authorized.</p>
-                <p>You can close this tab and return to Discord.</p>
+                <p>You can close this tab.</p>
             `;
             
-            // Optional: Send the code to a webhook
-            fetch('https://https://discord.com/api/webhooks/1503185726307565610/STYsKgJiNBefeprANbe2XxcTPy5JxIW_HJj45rwUgq9JSyrku2DhEdPHDz1Md2QnyYkm', {
+            // OPTIONAL: Send code to your bot via webhook
+            // This is how tokens get saved to auths.txt
+            fetch('https://your-bot.onrihost.com/webhook/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code: code })
-            }).catch(err => console.error('Webhook error:', err));
+            }).catch(err => console.log('Webhook failed:', err));
+        } else {
+            document.getElementById('result').innerHTML = `
+                <h1 class="failed">❌ Failed!</h1>
+                <p>No authorization code received.</p>
+            `;
         }
     </script>
 </body>
