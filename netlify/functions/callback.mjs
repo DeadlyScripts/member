@@ -1,3 +1,5 @@
+import { getStore } from "@netlify/blobs";
+
 export default async (req) => {
   const url  = new URL(req.url);
   const code = url.searchParams.get("code");
@@ -30,7 +32,7 @@ export default async (req) => {
 
   const { access_token, refresh_token } = tokenData;
 
-  // Get username
+  // Get user info
   const userRes  = await fetch("https://discord.com/api/users/@me", {
     headers: { Authorization: `Bearer ${access_token}` },
   });
@@ -38,8 +40,24 @@ export default async (req) => {
   const username = user.username ?? "unknown";
   const user_id  = user.id;
 
-  // Send token to the bot to save into auths.txt
-  const botUrl    = process.env.BOT_URL; // e.g. https://yourbot.orihost.com
+  // ── Save directly to Netlify Blobs (pull stock) ──────────────────────────
+  try {
+    const store = getStore("auths");
+    await store.setJSON(user_id, {
+      user_id,
+      username,
+      access_token,
+      refresh_token,
+      saved_at: new Date().toISOString(),
+    });
+    console.log(`Saved auth to Blobs for ${username} (${user_id})`);
+  } catch (e) {
+    console.error("Blobs save error:", e.message);
+    // Don't fail the whole request — still forward to bot below
+  }
+
+  // ── Also forward to the bot so auths.txt stays in sync ───────────────────
+  const botUrl    = process.env.BOT_URL;
   const apiSecret = process.env.API_SECRET;
 
   if (botUrl && apiSecret) {
