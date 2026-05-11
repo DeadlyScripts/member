@@ -1,5 +1,8 @@
 {
   "name": "memberz",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
 }
