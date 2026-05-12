@@ -3,6 +3,7 @@ import { getStore } from "@netlify/blobs";
 /**
  * GET /pull?key=SECRET&guild_id=123&amount=10
  * Pulls users from stock into the specified guild, skipping anyone already in it.
+ * Automatically removes users whose tokens are invalid (deauthorized).
  */
 export default async (req) => {
   const url      = new URL(req.url);
@@ -34,20 +35,18 @@ export default async (req) => {
   }
 
   if (auths.length === 0) {
-    return Response.json({ ok: true, added: 0, skipped: 0, failed: 0, total: 0 });
+    return Response.json({ ok: true, added: 0, skipped: 0, failed: 0, removed: 0, total: 0 });
   }
 
   // Shuffle
   auths.sort(() => Math.random() - 0.5);
 
-  let added = 0, skipped = 0, failed = 0;
+  let added = 0, skipped = 0, failed = 0, removed = 0;
   const addedUsers = [];
 
   for (const auth of auths) {
-    // Stop once we've added enough
     if (added >= amount) break;
 
-    // Try to add — Discord returns 204 if already in server, 201 if newly added
     const res = await fetch(`https://discord.com/api/guilds/${guild_id}/members/${auth.user_id}`, {
       method:  "PUT",
       headers: {
@@ -58,14 +57,18 @@ export default async (req) => {
     });
 
     if (res.status === 201) {
-      // Successfully added — was not in server
+      // Newly added
       added++;
       addedUsers.push(auth.username);
     } else if (res.status === 204) {
-      // Already in server — skip and don't count toward amount
+      // Already in server
       skipped++;
+    } else if (res.status === 401) {
+      // Token invalid — user deauthorized the app, remove from stock
+      await store.delete(auth.user_id);
+      removed++;
+      console.log(`Removed deauthorized user ${auth.username} (${auth.user_id}) from stock`);
     } else {
-      // Token expired or other error
       failed++;
       console.log(`Failed to add ${auth.username}: ${res.status}`);
     }
@@ -78,6 +81,7 @@ export default async (req) => {
     added,
     skipped,
     failed,
+    removed,
     total: auths.length,
     users: addedUsers,
   });
