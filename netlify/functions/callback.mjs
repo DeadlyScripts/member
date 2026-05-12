@@ -5,7 +5,7 @@ export default async (req) => {
   const code = url.searchParams.get("code");
 
   if (!code) {
-    return Response.json({ error: "No code provided" }, { status: 400 });
+    return new Response("No code provided", { status: 400 });
   }
 
   // Exchange code for tokens
@@ -24,23 +24,32 @@ export default async (req) => {
   const tokenData = await tokenRes.json();
 
   if (!tokenRes.ok) {
-    return Response.json(
-      { error: tokenData.error_description || tokenData.error || "Token exchange failed" },
-      { status: 400 }
-    );
+    const err = tokenData.error_description || tokenData.error || "Token exchange failed";
+    return new Response(JSON.stringify({ step: "token_exchange", error: err }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const { access_token, refresh_token } = tokenData;
 
   // Get user info
-  const userRes  = await fetch("https://discord.com/api/users/@me", {
+  const userRes = await fetch("https://discord.com/api/users/@me", {
     headers: { Authorization: `Bearer ${access_token}` },
   });
   const user     = await userRes.json();
   const username = user.username ?? "unknown";
   const user_id  = user.id;
 
-  // ── Save directly to Netlify Blobs (pull stock) ──────────────────────────
+  if (!user_id) {
+    return new Response(JSON.stringify({ step: "user_fetch", error: "No user_id returned", user }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Save to Netlify Blobs
+  let blobError = null;
   try {
     const store = getStore("auths");
     await store.setJSON(user_id, {
@@ -50,28 +59,29 @@ export default async (req) => {
       refresh_token,
       saved_at: new Date().toISOString(),
     });
-    console.log(`Saved auth to Blobs for ${username} (${user_id})`);
   } catch (e) {
-    console.error("Blobs save error:", e.message);
-    // Don't fail the whole request — still forward to bot below
+    blobError = e.message;
   }
 
-  // ── Also forward to the bot so auths.txt stays in sync ───────────────────
+  if (blobError) {
+    return new Response(JSON.stringify({ step: "blobs_save", error: blobError }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Forward to bot if BOT_URL set
   const botUrl    = process.env.BOT_URL;
   const apiSecret = process.env.API_SECRET;
-
   if (botUrl && apiSecret) {
     await fetch(`${botUrl}/save-auth`, {
       method:  "POST",
-      headers: {
-        "Content-Type":  "application/json",
-        "Authorization": apiSecret,
-      },
+      headers: { "Content-Type": "application/json", "Authorization": apiSecret },
       body: JSON.stringify({ user_id, username, access_token, refresh_token }),
     }).catch(e => console.error("Bot save error:", e.message));
   }
 
-  return Response.json({ ok: true, username });
+  return Response.json({ ok: true, username, user_id, saved_to_blobs: true });
 };
 
 export const config = { path: "/callback" };
