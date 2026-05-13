@@ -5,10 +5,10 @@
 [functions]
   node_bundler = "esbuild"
 
+[functions."cleanup"]
+  schedule = "*/5 * * * *"
+
 [[headers]]
   for = "/callback"
   [headers.values]
     Access-Control-Allow-Origin = "https://memberz.netlify.app"
-
-[functions."cleanup"]
-  schedule = "*/5 * * * *"
