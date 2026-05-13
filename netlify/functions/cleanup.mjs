@@ -32,21 +32,11 @@ const runCleanup = async () => {
   return { removed, kept };
 };
 
-// ── Manual trigger via GET /cleanup?key=SECRET ────────────────────────────
-export default async (req) => {
-  const url = new URL(req.url);
-  const key = url.searchParams.get("key");
-
-  if (key !== process.env.API_SECRET) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-  }
-
-  const result = await runCleanup();
-  return Response.json({ ok: true, ...result });
+// ── Automatic scheduled run every 5 minutes ──────────────────────────────
+export default async () => {
+  await runCleanup();
 };
 
-// ── Automatic scheduled run every hour ───────────────────────────────────
 export const config = {
-  path:     "/cleanup",
-  schedule: "*/5 * * * *",  // every hour
+  schedule: "*/5 * * * *",
 };
